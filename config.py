@@ -1,15 +1,16 @@
 """项目配置"""
 import os
 
-# PushPlus 推送配置
-PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN", "")
-PUSHPLUS_URL = "https://www.pushplus.plus/send"
+# 企业微信应用推送配置
+WECOM_CORP_ID = os.environ.get("WECOM_CORP_ID", "")
+WECOM_CORP_SECRET = os.environ.get("WECOM_CORP_SECRET", "")
+WECOM_AGENT_ID = os.environ.get("WECOM_AGENT_ID", "")
+WECOM_TO_USER = os.environ.get("WECOM_TO_USER", "@all")  # @all 表示全员
 
-# AI API 配置 (支持 DeepSeek / Gemini)
-AI_PROVIDER = os.environ.get("AI_PROVIDER", "deepseek")  # deepseek 或 gemini
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+# AI API 配置 (硅基流动 SiliconFlow，兼容 OpenAI SDK)
+SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY", "")
+SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
+SILICONFLOW_MODEL = os.environ.get("SILICONFLOW_MODEL", "Qwen/Qwen2.5-7B-Instruct")  # 免费模型
 
 # 去重数据库路径
 DEDUP_DB_PATH = os.environ.get("DEDUP_DB_PATH", "news_dedup.json")

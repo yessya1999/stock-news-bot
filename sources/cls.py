@@ -9,14 +9,21 @@ def fetch_cls() -> list[dict]:
     news_list = []
     try:
         # 财联社电报 API
-        url = "https://www.cls.cn/nodeapi/updateTelegraphList"
+        url = "https://www.cls.cn/nodeapi/telegraphList"
         params = {
             "app": "CailianpressWeb",
             "os": "web",
             "sv": "7.7.5",
             "rn": str(MAX_NEWS_PER_SOURCE),
         }
-        resp = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://www.cls.cn/",
+            "Accept": "application/json, text/plain, */*",
+        }
+        resp = requests.get(url, params=params, headers=headers, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
         data = resp.json()
 

@@ -1,72 +1,58 @@
-"""政府/监管源 - 新华社、中国政府网、证监会、央行"""
-import feedparser
+"""政府/监管源 - 中国政府网、央行"""
 import requests
 from bs4 import BeautifulSoup
 from config import REQUEST_HEADERS, REQUEST_TIMEOUT, MAX_NEWS_PER_SOURCE
 
 
-def _fetch_gov_rss() -> list[dict]:
-    """中国政府网 RSS"""
+def _fetch_gov() -> list[dict]:
+    """中国政府网 - 部门联播（可静态抓取）"""
     news_list = []
     try:
-        feed = feedparser.parse("http://www.gov.cn/rss/govall.xml")
-        for entry in feed.entries[:MAX_NEWS_PER_SOURCE]:
-            title = entry.get("title", "").strip()
-            if not title:
-                continue
-            news_list.append({
-                "title": title,
-                "content": entry.get("summary", title),
-                "source": "中国政府网",
-                "url": entry.get("link", ""),
-                "pub_time": entry.get("published", ""),
-            })
-    except Exception as e:
-        print(f"[中国政府网RSS] 抓取失败: {e}")
-    return news_list
-
-
-def _fetch_xinhua() -> list[dict]:
-    """新华社财经频道"""
-    news_list = []
-    try:
-        url = "http://qc.wa.news.cn/nodeart/list?nid=11147664&pgnum=1&cnt=20&tp=1&orderby=1"
+        url = "https://www.gov.cn/lianbo/bumen/"
         resp = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
-
-        items = data.get("data", {}).get("list", []) or []
-        for item in items[:MAX_NEWS_PER_SOURCE]:
-            title = item.get("Title", "").strip()
-            if not title:
+        resp.encoding = "utf-8"
+        soup = BeautifulSoup(resp.text, "lxml")
+        for a_tag in soup.select("a"):
+            title = a_tag.get_text(strip=True)
+            if not title or len(title) < 10:
                 continue
+            href = a_tag.get("href", "")
+            # 过滤非新闻链接
+            if not href or "gov.cn" not in href and not href.startswith("/"):
+                continue
+            if href.startswith("/"):
+                href = "https://www.gov.cn" + href
             news_list.append({
                 "title": title,
-                "content": item.get("Abstract", title),
-                "source": "新华社",
-                "url": item.get("LinkUrl", ""),
-                "pub_time": item.get("PubTime", ""),
+                "content": title,
+                "source": "中国政府网",
+                "url": href,
+                "pub_time": "",
             })
+            if len(news_list) >= MAX_NEWS_PER_SOURCE:
+                break
     except Exception as e:
-        print(f"[新华社] 抓取失败: {e}")
+        print(f"[中国政府网] 抓取失败: {e}")
     return news_list
 
 
 def _fetch_pbc() -> list[dict]:
-    """央行公告"""
+    """央行新闻发布"""
     news_list = []
     try:
+        # 央行新闻发布页
         url = "http://www.pbc.gov.cn/goutongjiaoliu/113456/113469/index.html"
         resp = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
-        for item in soup.select(".newslist_style li")[:10]:
-            a_tag = item.select_one("a")
-            if not a_tag:
-                continue
+        for a_tag in soup.select("td a, .portlet_list a"):
             title = a_tag.get_text(strip=True)
+            if not title or len(title) < 8:
+                continue
             href = a_tag.get("href", "")
-            if href and not href.startswith("http"):
+            if not href or href == "#":
+                continue
+            if href.startswith("/"):
                 href = "http://www.pbc.gov.cn" + href
             news_list.append({
                 "title": title,
@@ -75,6 +61,8 @@ def _fetch_pbc() -> list[dict]:
                 "url": href,
                 "pub_time": "",
             })
+            if len(news_list) >= 10:
+                break
     except Exception as e:
         print(f"[央行] 抓取失败: {e}")
     return news_list
@@ -83,7 +71,6 @@ def _fetch_pbc() -> list[dict]:
 def fetch_gov() -> list[dict]:
     """汇总所有政府/监管源"""
     results = []
-    results.extend(_fetch_gov_rss())
-    results.extend(_fetch_xinhua())
+    results.extend(_fetch_gov())
     results.extend(_fetch_pbc())
     return results

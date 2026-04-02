@@ -5,7 +5,7 @@ import time
 from sources import ALL_SOURCES, BREAKING_SOURCES
 from ai_analyzer import analyze_batch, filter_breaking
 from dedup import deduplicate
-from pushplus import send_daily_digest, send_breaking_news
+from wecom import send_daily_digest, send_breaking_news
 
 
 def collect_news(source_list: list) -> list[dict]:
