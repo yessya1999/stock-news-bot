@@ -9,19 +9,20 @@ from openai import OpenAI
 SYSTEM_PROMPT = """你是一个专业的股市财经分析师。对于给定的新闻，请严格按 JSON 格式返回分析结果。
 
 要求：
-1. summary: 一句话摘要（不超过50字）
-2. score: 股市影响评分（1-10，10=极高影响）
-3. direction: 影响方向（利好/利空/中性）
-4. sectors: 影响板块（如"银行、地产"）
-5. market: 影响市场（A股/美股/两者）
+1. summary: 新闻摘要（30-80字，概括核心事件）
+2. analysis: 股市影响分析（50-150字，说明为什么影响股市、影响逻辑、哪些个股或ETF值得关注）
+3. score: 股市影响评分（1-10，10=极高影响）
+4. direction: 影响方向（利好/利空/中性）
+5. sectors: 影响板块（如"银行、地产"，列出2-5个）
+6. market: 影响市场（A股/美股/两者）
 
 只返回 JSON，不要其他文字。示例：
-{"summary":"央行降准0.5个百分点释放流动性","score":9,"direction":"利好","sectors":"银行、地产、基建","market":"A股"}"""
+{"summary":"央行宣布降准0.5个百分点，预计释放长期资金约1.2万亿元","analysis":"降准直接增加银行可贷资金，降低资金成本，利好信贷扩张。房地产行业有望获得更多融资支持，基建投资也将受益于宽松流动性。关注招商银行、万科A、中国建筑等标的。","score":9,"direction":"利好","sectors":"银行、地产、基建","market":"A股"}"""
 
 BATCH_PROMPT = """你是一个专业的股市财经分析师。对以下多条新闻逐条分析，返回一个 JSON 数组。
 
 每条新闻的分析格式：
-{"index": 序号, "summary": "一句话摘要(≤50字)", "score": 评分1-10, "direction": "利好/利空/中性", "sectors": "影响板块", "market": "A股/美股/两者"}
+{"index": 序号, "summary": "新闻摘要(30-80字)", "analysis": "股市影响分析(50-150字，说明影响逻辑和值得关注的标的)", "score": 评分1-10, "direction": "利好/利空/中性", "sectors": "影响板块(2-5个)", "market": "A股/美股/两者"}
 
 只返回 JSON 数组，不要其他文字。"""
 
@@ -51,7 +52,7 @@ def analyze_single(news: dict) -> dict:
                 {"role": "user", "content": text},
             ],
             temperature=0.3,
-            max_tokens=300,
+            max_tokens=500,
         )
         result_text = resp.choices[0].message.content.strip()
         # 清理 markdown 代码块标记
@@ -96,7 +97,7 @@ def analyze_batch(news_list: list[dict]) -> list[dict]:
                     {"role": "user", "content": numbered},
                 ],
                 temperature=0.3,
-                max_tokens=2000,
+                max_tokens=4000,
             )
             result_text = resp.choices[0].message.content.strip()
             if result_text.startswith("```"):
